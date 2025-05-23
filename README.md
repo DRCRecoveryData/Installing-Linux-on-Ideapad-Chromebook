@@ -93,10 +93,10 @@ When the writing is completed successfully, shut down and start from the interna
 
 Even if you enter safely, you will not be able to use it as it is now. You will need to resize the file system.
 
-* It used to be on GitHub mentioned earlier, but it seems to have been deleted for some reason, so please download it from the following and use it: [https://bokumin45.server-on.net/download/extend-rootfs.sh](https://bokumin45.server-on.net/download/extend-rootfs.sh)
+* It used to be on GitHub mentioned earlier, but it seems to have been deleted for some reason, so please download it from the following and use it: [https://github.com/DRCRecoveryData/Installing-Linux-on-Ideapad-Chromebook/blob/main/extend-rootfs.sh](https://github.com/DRCRecoveryData/Installing-Linux-on-Ideapad-Chromebook/blob/main/extend-rootfs.sh)
 
 ```bash
-wget https://bokumin45.server-on.net/download/extend-rootfs.sh
+wget https://github.com/DRCRecoveryData/Installing-Linux-on-Ideapad-Chromebook/blob/main/extend-rootfs.sh
 sudo sh extend-rootfs.sh
 ```
 
