@@ -80,7 +80,8 @@ Once you have confirmed that the internal storage is visible, execute the follow
 
 ```bash
 # Download the image file to external storage (USB memory)
-wget https://github.com/hexdump0815/imagebuilder/releases/download/230917-01/chromebook_kukui-aarch64-jammy.img.gz
+wget https://images.postmarketos.org/bpo/v24.12/google-kukui/gnome/20250521-0308/20250521-0308-postmarketOS-v24.12-gnome-3-google-kukui.img.xz
+
 # Write to the target device found by the above command
 export TGTDEV=mmcblk0
 sudo sh -c 'xzcat "20250521-0331-postmarketOS-v24.12-phosh-22.5-go
