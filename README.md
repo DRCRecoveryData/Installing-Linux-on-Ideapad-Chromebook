@@ -83,7 +83,8 @@ Once you have confirmed that the internal storage is visible, execute the follow
 wget https://github.com/hexdump0815/imagebuilder/releases/download/230917-01/chromebook_kukui-aarch64-jammy.img.gz
 # Write to the target device found by the above command
 export TGTDEV=mmcblk0
-zcat chromebook_kukui-aarch64-jammy.img.gz | dd of=/dev/$TGTDEV bs=1024k status=progress
+sudo sh -c 'xzcat "20250521-0331-postmarketOS-v24.12-phosh-22.5-go
+ogle-kukui.img.xz" | dd of=/dev/mmcblk0 bs=1M'
 ```
 
 When the writing is completed successfully, shut down and start from the internal storage.
