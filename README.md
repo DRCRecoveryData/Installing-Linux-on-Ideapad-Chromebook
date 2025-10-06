@@ -132,7 +132,7 @@ wget https://images.postmarketos.org/bpo/v25.06/google-kukui/plasma-desktop/2025
 export TGTDEV=mmcblk0
 
 # Write the image to the internal drive (/dev/mmcblk0)
-sudo sh -c 'xzcat "20251003-0331-postmarketOS-v25.06-plasma-desktop-3-google-kukui.img.xz" | dd of=/dev/mmcblk0 bs=1M status=progress'
+sudo sh -c 'xzcat "20251003-0331-postmarketOS-v25.06-plasma-desktop-3-google-kukui.img.xz" | dd of=/dev/mmcblk0 bs=1M'
 ```
 
 Once the write completes, **shut down** the device, remove the USB, and power it on. It should boot into your newly installed Linux system.
