@@ -1,3 +1,6 @@
+<img width="1920" height="1200" alt="Screenshot From 2025-10-06 09-49-11" src="https://github.com/user-attachments/assets/0d7dcbdb-e97a-4469-8b2a-96fe2993fa0e" />
+
+
 # 🐧 Installing Linux on Lenovo IdeaPad Duet Chromebook
 
 I received a Lenovo IdeaPad Duet Chromebook from an acquaintance. Finding **Chrome OS** difficult to use, I decided to install **Linux**. I hope this guide is helpful to others with the same device.
