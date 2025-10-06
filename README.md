@@ -164,6 +164,16 @@ sudo sh extend-rootfs.sh
 
 The script will automatically extend the root filesystem to utilize the full internal storage capacity. Reboot when prompted or after execution.
 
+```
+google-kukui:~$ sudo df -h /
+
+Filesystem                Size      Used Available Use% Mounted on
+
+/dev/mmcblk0p3          114.3G      3.6G    104.8G   3% /
+
+google-kukui:~$
+```
+
 -----
 
 ## 6\. Conclusion and Notes
