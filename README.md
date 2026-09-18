@@ -122,7 +122,7 @@ The following commands download the image again (to the USB drive's temporary st
 
 ```bash
 # Download the image file (v25.06 Plasma Desktop used for this guide)
-wget https://images.postmarketos.org/bpo/v25.06/google-kukui/plasma-desktop/20251003-0331/20251003-0331-postmarketOS-v25.06-plasma-desktop-3-google-kukui.img.xz
+wget https://images.postmarketos.org/bpo/v26.06/google-kukui/gnome/20260918-0330/20260918-0330-postmarketOS-v26.06-gnome-4-google-kukui.img.xz
 ```
 
 2.  **Write to Internal eMMC:**
@@ -135,7 +135,7 @@ wget https://images.postmarketos.org/bpo/v25.06/google-kukui/plasma-desktop/2025
 export TGTDEV=mmcblk0
 
 # Write the image to the internal drive (/dev/mmcblk0)
-sudo sh -c 'xzcat "20251003-0331-postmarketOS-v25.06-plasma-desktop-3-google-kukui.img.xz" | dd of=/dev/mmcblk0 bs=1M'
+sudo sh -c 'xzcat "20260918-0330-postmarketOS-v26.06-gnome-4-google-kukui.img.xz" | dd of=/dev/mmcblk0 bs=1M'
 ```
 
 Once the write completes, **shut down** the device, remove the USB, and power it on. It should boot into your newly installed Linux system.
