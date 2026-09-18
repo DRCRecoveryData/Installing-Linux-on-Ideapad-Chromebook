@@ -130,12 +130,32 @@ wget https://images.postmarketos.org/bpo/v26.06/google-kukui/gnome/20260918-0330
 
 <!-- end list -->
 
-```bash
-# Set the target device variable (Internal eMMC)
-export TGTDEV=mmcblk0
+```
+#!/bin/bash
+set -euo pipefail
 
-# Write the image to the internal drive (/dev/mmcblk0)
-sudo sh -c 'xzcat "20260918-0330-postmarketOS-v26.06-gnome-4-google-kukui.img.xz" | dd of=/dev/mmcblk0 bs=1M'
+TGTDEV=mmcblk0
+IMG="/absolute/path/to/20260918-0330-postmarketOS-v26.06-gnome-4-google-kukui.img.xz"
+
+# --- Safety checks ---
+[ -b "/dev/$TGTDEV" ] || { echo "Not a block device: /dev/$TGTDEV"; exit 1; }
+
+echo "About to write image to /dev/$TGTDEV:"
+lsblk "/dev/$TGTDEV"
+read -p "This will DESTROY all data on /dev/$TGTDEV. Continue? [y/N] " ans
+[ "$ans" = "y" ] || { echo "Aborted."; exit 1; }
+
+# --- Unmount any partitions on the target ---
+for part in /dev/${TGTDEV}p*; do
+    [ -b "$part" ] && sudo umount "$part" 2>/dev/null || true
+done
+
+# --- Write ---
+echo "Writing $IMG to /dev/$TGTDEV ..."
+xzcat "$IMG" | sudo dd of="/dev/$TGTDEV" bs=1M conv=fsync status=progress
+
+sudo sync
+echo "Done."
 ```
 
 Once the write completes, **shut down** the device, remove the USB, and power it on. It should boot into your newly installed Linux system.
