@@ -80,8 +80,8 @@ Shut down the device, insert your prepared **Linux USB drive**, and boot from it
 ### Login and Storage Check
 
 1. Log in to the live environment:
-   - **Username:** `linux`
-   - **Password:** `changeme`
+   - **Username:** `user`
+   - **Password:** `147147`
 
    (These may vary depending on the image — check the image documentation if they fail.)
 
