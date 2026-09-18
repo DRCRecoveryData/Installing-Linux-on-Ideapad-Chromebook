@@ -128,8 +128,8 @@ Download the image to the live environment and write it directly to `/dev/mmcblk
 
    Save the following as `flash.sh` and run it with `sudo sh flash.sh`:
 
-   ```bash
-   #!/bin/sh
+```bash
+#!/bin/sh
 set -eu
 
 TGTDEV=mmcblk0
@@ -165,7 +165,7 @@ fi
 
 sync
 echo "Done."
-   ```
+```
 
 Once the write completes, **shut down** the device, remove the USB drive, and power it on. It should boot into your newly installed Linux system.
 
