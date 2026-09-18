@@ -31,7 +31,7 @@ This guide details the process of replacing Chrome OS with a **postmarketOS** im
 This guide uses a **postmarketOS** image built for the `google-kukui` board:
 
 - **Reference project:** [hexdump0815/imagebuilder](https://github.com/hexdump0815/imagebuilder)
-- **Image used:** postmarketOS **v25.06** (Plasma desktop, for `google-kukui`).
+- **Image used:** postmarketOS **v26.06** (GNOME desktop, for `google-kukui`).
 
 You will need a separate computer and software such as **[balenaEtcher](https://etcher.balena.io/)** to write the `.img.xz` file to a **USB flash drive** (8 GB minimum recommended).
 
@@ -113,7 +113,7 @@ Shut down the device, insert your prepared **Linux USB drive**, and boot from it
 
 Download the image to the live environment and write it directly to `/dev/mmcblk0`.
 
-> **Version note:** The original guide referenced postmarketOS **v25.06**, but the actual image used below is **v26.06** (`20260918-0330-...`). Update the URL to match whichever image you downloaded.
+> **Version note:** The original guide referenced postmarketOS **v25.06**, but the image used below is **v26.06** (`20260918-0330-...`). Update the URL to match whichever image you downloaded.
 
 1. **Download the image:**
 
@@ -128,44 +128,48 @@ Download the image to the live environment and write it directly to `/dev/mmcblk
 
    Save the following as `flash.sh` and run it with `sudo sh flash.sh`:
 
-```bash
-#!/bin/sh
-set -eu
+   ```sh
+   #!/bin/sh
+   set -eu
 
-TGTDEV=mmcblk0
-IMG="$PWD/20260918-0330-postmarketOS-v26.06-gnome-4-google-kukui.img.xz"
+   TGTDEV=mmcblk0
+   IMG="$PWD/20260918-0330-postmarketOS-v26.06-gnome-4-google-kukui.img.xz"
 
-# --- Safety checks ---
-[ -b "/dev/$TGTDEV" ] || { echo "Not a block device: /dev/$TGTDEV"; exit 1; }
-[ -f "$IMG" ]         || { echo "Image not found: $IMG"; exit 1; }
+   # --- Safety checks ---
+   [ -b "/dev/$TGTDEV" ] || { echo "Not a block device: /dev/$TGTDEV"; exit 1; }
+   [ -f "$IMG" ]         || { echo "Image not found: $IMG"; exit 1; }
 
-echo "About to write image to /dev/$TGTDEV:"
-lsblk "/dev/$TGTDEV"
-printf 'This will DESTROY all data on /dev/%s. Continue? [y/N] ' "$TGTDEV"
-read -r ans
-[ "$ans" = "y" ] || { echo "Aborted."; exit 1; }
+   echo "About to write image to /dev/$TGTDEV:"
+   lsblk "/dev/$TGTDEV"
+   printf 'This will DESTROY all data on /dev/%s. Continue? [y/N] ' "$TGTDEV"
+   read -r ans
+   [ "$ans" = "y" ] || { echo "Aborted."; exit 1; }
 
-# --- Unmount any partitions on the target ---
-for part in /dev/${TGTDEV}p*; do
-    [ -b "$part" ] && umount "$part" 2>/dev/null || true
-done
+   # --- Unmount any partitions on the target ---
+   for part in /dev/${TGTDEV}p*; do
+       [ -b "$part" ] && umount "$part" 2>/dev/null || true
+   done
 
-# --- Write ---
-# postmarketOS live ships BusyBox dd, which rejects status=progress.
-# Prefer pv if available, else GNU dd, else plain dd.
-echo "Writing $IMG to /dev/$TGTDEV ..."
-if command -v pv >/dev/null 2>&1; then
-    xzcat "$IMG" | pv | dd of="/dev/$TGTDEV" bs=4M conv=fsync
-elif dd --help 2>&1 | grep -q 'status=progress'; then
-    xzcat "$IMG" | dd of="/dev/$TGTDEV" bs=4M conv=fsync status=progress
-else
-    echo "Note: no pv and no dd status=progress — writing silently."
-    xzcat "$IMG" | dd of="/dev/$TGTDEV" bs=4M conv=fsync
-fi
+   # --- Write ---
+   # postmarketOS live ships BusyBox dd, which rejects status=progress.
+   # Prefer pv if available, else GNU dd, else plain dd.
+   echo "Writing $IMG to /dev/$TGTDEV ..."
+   if command -v pv >/dev/null 2>&1; then
+       xzcat "$IMG" | pv | dd of="/dev/$TGTDEV" bs=4M conv=fsync
+   elif dd --help 2>&1 | grep -q 'status=progress'; then
+       xzcat "$IMG" | dd of="/dev/$TGTDEV" bs=4M conv=fsync status=progress
+   else
+       echo "Note: no pv and no dd status=progress — writing silently."
+       xzcat "$IMG" | dd of="/dev/$TGTDEV" bs=4M conv=fsync
+   fi
 
-sync
-echo "Done."
-```
+   sync
+   echo "Done."
+   ```
+
+   > **Why `sh` and not `bash`?** The postmarketOS live environment's `/bin/sh` is BusyBox `ash`, which does not support bash arrays. The script above is deliberately POSIX-compatible so it runs under either shell. If you invoke it as `sudo sh flash.sh`, do **not** use a bash-only version.
+
+   > **Why no `status=progress`?** BusyBox `dd` rejects `status=progress` with `dd: invalid argument 'progress' to 'status'`. GNU coreutils `dd` accepts it. The script detects which one is available and falls back gracefully.
 
 Once the write completes, **shut down** the device, remove the USB drive, and power it on. It should boot into your newly installed Linux system.
 
@@ -173,36 +177,36 @@ Once the write completes, **shut down** the device, remove the USB drive, and po
 
 ## 5. File System Resizing
 
-The installed image only uses a portion of the internal storage (e.g. ~10 GB of 128 GB). You must resize the root filesystem (`/`) to use the remaining space.
-
-1. After successfully booting into the installed Linux, open a terminal.
-2. Download the resizing script:
-
-   ```bash
-   wget https://raw.githubusercontent.com/DRCRecoveryData/Installing-Linux-on-Ideapad-Chromebook/main/extend-rootfs.sh
-   ```
-
-3. Run it as root:
-
-   ```bash
-   sudo sh extend-rootfs.sh
-   ```
-
-The script will extend the root filesystem to use the full internal storage capacity. Reboot when prompted.
-
-Verify the result:
+Most postmarketOS images — including the v26.06 image used in this guide — **auto-resize the root filesystem on first boot**. After the device boots into Linux for the first time, `/` should already span the full internal storage. Verify with:
 
 ```console
-google-kukui:~$ df -h /
+$ df -h /
 Filesystem      Size  Used Avail Use% Mounted on
-/dev/mmcblk0p3  114G  3.6G  105G   3% /
+/dev/mmcblk0p3  112G  2.2G  104G   2% /
 ```
+
+If the size shown is close to your device's full eMMC capacity (116.5 GB for the 128 GB model), **you're done — skip the rest of this section.**
+
+### If `/` is NOT full size
+
+Some older or custom images do not auto-resize. If `df -h /` shows something much smaller (e.g. ~4 GB), run:
+
+```bash
+# Download the file system resizing script
+wget https://raw.githubusercontent.com/DRCRecoveryData/Installing-Linux-on-Ideapad-Chromebook/main/extend-rootfs.sh
+
+# Execute as root
+sudo sh extend-rootfs.sh
+```
+
+The script detects your root device and filesystem type, then expands it to fill the partition. When it reports `Nothing to do!`, that means you were already resized — it is **not** an error. Reboot after resizing.
 
 ---
 
 ## 6. Conclusion and Notes
 
-I successfully installed and am using **postmarketOS** on my IdeaPad Duet.
+I successfully installed and am using **postmarketOS v26.06 (GNOME)** on my IdeaPad Duet.
 
 - **Desktop environment:** I initially had issues with the touch panel under Xfce. Switching to **GNOME** or **Plasma** significantly improved touch operation.
+- **Storage:** After first boot, `/` occupies the full 112 GB of the internal eMMC. No manual resizing was required.
 - **Next steps:** For post-installation configuration and further tweaks, refer to the follow-up article *(link to be inserted)*.
