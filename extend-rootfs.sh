@@ -1,35 +1,31 @@
 #!/bin/bash
+set -e
 
-echo ""
+echo
 echo "Attempting to complete root filesystem resize..."
-echo "This step ensures the ext4 filesystem fills the expanded partition."
-echo ""
+echo "This step ensures the filesystem fills the expanded partition."
+echo
 
-# Set known values (as per your initial script)
-ROOTDEVICE="mmcblk0p3"
-ROOTFSTYPE="ext4"
+ROOTDEVICE=$(findmnt -n -o SOURCE /)
+ROOTFSTYPE=$(findmnt -n -o FSTYPE /)
+PARENTDISK=$(lsblk -no PKNAME "$ROOTDEVICE")
 
-# Step 1: Inform the kernel again (just in case the previous one failed silently)
-echo "Informing kernel of partition changes on /dev/mmcblk0..."
-partprobe /dev/mmcblk0
+echo "Root device: $ROOTDEVICE ($ROOTFSTYPE) on /dev/$PARENTDISK"
 
-# Step 2: Resize the filesystem to fill the available space
-echo "Resizing $ROOTFSTYPE filesystem on /dev/$ROOTDEVICE..."
-if [ "$ROOTFSTYPE" = "btrfs" ]; then
-    btrfs filesystem resize max /
-else
-    # The command without a size parameter expands to the max size of the partition
-    resize2fs /dev/$ROOTDEVICE
-fi
+echo "Informing kernel of partition changes on /dev/$PARENTDISK..."
+partprobe "/dev/$PARENTDISK" || true
 
-# Step 3: Verify the new size
-echo ""
+echo "Resizing $ROOTFSTYPE filesystem on $ROOTDEVICE..."
+case "$ROOTFSTYPE" in
+    btrfs) btrfs filesystem resize max / ;;
+    ext2|ext3|ext4) resize2fs "$ROOTDEVICE" ;;
+    xfs) xfs_growfs / ;;
+    *) echo "Unsupported filesystem: $ROOTFSTYPE"; exit 1 ;;
+esac
+
+echo
 echo "Filesystem resize completed. Current usage:"
 df -h /
 
-echo ""
+echo
 echo "Done."
-
-# Note: If this still fails with the shrinking error, a reboot is required
-# to fully flush the kernel's view of the disk geometry before running
-# 'resize2fs /dev/mmcblk0p3' again.
