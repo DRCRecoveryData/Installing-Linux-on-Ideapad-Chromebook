@@ -1,6 +1,6 @@
-<img width="1920" height="1200" alt="PostmarketOS running on a Lenovo IdeaPad Duet Chromebook" src="https://github.com/user-attachments/assets/0d7dcbdb-e97a-4469-8b2a-96fe2993fa0e" />
-
 # 🐧 Installing Linux on the Lenovo IdeaPad Duet Chromebook
+
+<img width="1920" height="1200" alt="PostmarketOS running on a Lenovo IdeaPad Duet Chromebook" src="https://github.com/user-attachments/assets/0d7dcbdb-e97a-4469-8b2a-96fe2993fa0e" />
 
 I received a Lenovo IdeaPad Duet Chromebook from an acquaintance. Finding **Chrome OS** difficult to use, I decided to install **Linux**. I hope this guide is helpful to others with the same device.
 
@@ -175,7 +175,112 @@ Once the write completes, **shut down** the device, remove the USB drive, and po
 
 ---
 
-## 5. File System Resizing
+## 4b. Optional: Pre-Resize from the Live USB (No Reboot)
+
+Most postmarketOS images auto-resize on first boot, but if you want to **pre-resize the root filesystem from the live USB environment** so the new system boots with the full disk already available, you can do it manually. This avoids a second reboot later.
+
+### Step 1 — Fix the GPT to cover the full disk
+
+The image is often written to a smaller virtual disk than your actual eMMC, so the GPT header sits at the wrong position. Run:
+
+```bash
+sudo parted /dev/mmcblk0 print
+```
+
+When you see:
+
+```
+Warning: Not all of the space available to /dev/mmcblk0 appears to be used...
+Fix/Ignore?
+```
+
+Type **`Fix`** and press Enter.
+
+### Step 2 — Resize partition 3 to 100% of the disk
+
+```bash
+sudo parted /dev/mmcblk0 resizepart 3 100%
+```
+
+Interact as follows:
+
+- `Fix/Ignore?` → type `Fix` (only if asked)
+- `Partition number?` → type `3`
+- `End?  [<old value>]?` → type **`100%`** and press Enter
+
+> ⚠️ **Critical:** Do **not** just press Enter at the `End?` prompt — that accepts the *old* value and the partition will **not** grow. You must explicitly type `100%`.
+
+### Step 3 — Refresh the kernel partition table
+
+```bash
+sudo partprobe /dev/mmcblk0
+```
+
+If `partprobe` fails or does nothing, try:
+
+```bash
+sudo partx -u /dev/mmcblk0
+sudo blockdev --rereadpt /dev/mmcblk0
+```
+
+### Step 4 — Check and grow the filesystem
+
+```bash
+sudo e2fsck -f /dev/mmcblk0p3
+```
+
+Wait for it to finish, then run **separately**:
+
+```bash
+sudo resize2fs /dev/mmcblk0p3
+```
+
+Expected output:
+
+```
+resize2fs 1.47.x (…)
+Resizing the filesystem on /dev/mmcblk0p3 to 30394363 (4k) blocks.
+The filesystem on /dev/mmcblk0p3 is now 30394363 (4k) blocks long.
+```
+
+### Step 5 — Verify
+
+```bash
+sudo parted /dev/mmcblk0 unit s print
+```
+
+```bash
+sudo tune2fs -l /dev/mmcblk0p3 | grep -i "block count"
+```
+
+```bash
+sudo blkid /dev/mmcblk0p3
+```
+
+Expected results:
+
+- Partition 3 ends near `244277214s` (~116 GB)
+- `Block count` ≈ `30394363` (with 4 KB blocks)
+- `UUID` unchanged from before the resize (important — `/etc/fstab` references it)
+
+### Step 6 — Shut down and boot
+
+```bash
+sudo poweroff
+```
+
+Remove the USB drive and power on. The new system should boot with the root filesystem already spanning the full eMMC.
+
+### ⚠️ Caveats for the no-reboot method
+
+- **Paste commands one line at a time.** If you paste a multi-line block, the shell may merge lines and produce errors like `parted: invalid token: #` or `e2fsck ... sudo resize2fs ...`.
+- **`resize2fs` may report `Nothing to do!`** if the kernel still has the old partition size cached. In that case, retry the `partx`/`blockdev` refresh, or just reboot — the new system will auto-resize on first boot anyway.
+- **If the GPT fix is skipped**, `parted` will keep warning and partition entries may be misaligned. Always answer `Fix` first.
+- **You cannot resize the root filesystem of the *live* system this way** — this only works because `/dev/mmcblk0p3` is unmounted (the live system runs from the USB). Do not attempt this on a mounted root device.
+
+---
+
+## 5. File System Resizing (Post-Boot)
 
 Most postmarketOS images — including the v26.06 image used in this guide — **auto-resize the root filesystem on first boot**. After the device boots into Linux for the first time, `/` should already span the full internal storage. Verify with:
 
@@ -201,6 +306,8 @@ sudo sh extend-rootfs.sh
 
 The script detects your root device and filesystem type, then expands it to fill the partition. When it reports `Nothing to do!`, that means you were already resized — it is **not** an error. Reboot after resizing.
 
+> **Note:** If you already pre-resized from the live USB (Section 4b), the filesystem will already be full-size and this step will report `Nothing to do!`. That is expected.
+
 ---
 
 ## 6. Conclusion and Notes
@@ -210,3 +317,43 @@ I successfully installed and am using **postmarketOS v26.06 (GNOME)** on my Idea
 - **Desktop environment:** I initially had issues with the touch panel under Xfce. Switching to **GNOME** or **Plasma** significantly improved touch operation.
 - **Storage:** After first boot, `/` occupies the full 112 GB of the internal eMMC. No manual resizing was required.
 - **Next steps:** For post-installation configuration and further tweaks, refer to the follow-up article *(link to be inserted)*.
+
+---
+
+## Repository Files
+
+| File | Description |
+| :--- | :--- |
+| `README.md` | This guide |
+| `flash.sh` | Writes the postmarketOS image to internal eMMC (Section 4) |
+| `extend-rootfs.sh` | Resizes the root filesystem after boot (Section 5) |
+| `auto-install.sh` | All-in-one: flash + GPT fix + partition resize + filesystem resize (Sections 4 + 4b) |
+
+---
+
+## Quick Reference: Live USB Resize Cheat Sheet
+
+For the no-reboot pre-resize method (Section 4b), here is the minimal command sequence:
+
+```bash
+# 1. Fix GPT (answer "Fix" at the prompt)
+sudo parted /dev/mmcblk0 print
+
+# 2. Resize partition 3 (type "3", then "100%")
+sudo parted /dev/mmcblk0 resizepart 3 100%
+
+# 3. Refresh kernel partition table
+sudo partprobe /dev/mmcblk0
+
+# 4. Check filesystem
+sudo e2fsck -f /dev/mmcblk0p3
+
+# 5. Grow filesystem
+sudo resize2fs /dev/mmcblk0p3
+
+# 6. Verify
+sudo parted /dev/mmcblk0 unit s print
+sudo tune2fs -l /dev/mmcblk0p3 | grep -i "block count"
+```
+
+Run each command on its own line. Do not paste the whole block at once.
