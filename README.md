@@ -336,8 +336,7 @@ I successfully installed and am using **postmarketOS v26.06 (GNOME)** on my Idea
 For the no-reboot pre-resize method (Section 4b), here is the minimal command sequence:
 
 ```bash
-printf "Fix\n" | sudo parted /dev/mmcblk0 print && \
-sudo parted /dev/mmcblk0 resizepart 3 100% && \
+printf "Fix\n3\n100%\n" | sudo parted --script /dev/mmcblk0 resizepart 3 && \
 sudo partprobe /dev/mmcblk0 && \
 sudo e2fsck -f /dev/mmcblk0p3 && \
 sudo resize2fs /dev/mmcblk0p3 && \
