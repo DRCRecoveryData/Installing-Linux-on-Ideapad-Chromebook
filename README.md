@@ -336,23 +336,12 @@ I successfully installed and am using **postmarketOS v26.06 (GNOME)** on my Idea
 For the no-reboot pre-resize method (Section 4b), here is the minimal command sequence:
 
 ```bash
-# 1. Fix GPT (answer "Fix" at the prompt)
-sudo parted /dev/mmcblk0 print
-
-# 2. Resize partition 3 (type "3", then "100%")
-sudo parted /dev/mmcblk0 resizepart 3 100%
-
-# 3. Refresh kernel partition table
-sudo partprobe /dev/mmcblk0
-
-# 4. Check filesystem
-sudo e2fsck -f /dev/mmcblk0p3
-
-# 5. Grow filesystem
-sudo resize2fs /dev/mmcblk0p3
-
-# 6. Verify
-sudo parted /dev/mmcblk0 unit s print
+printf "Fix\n" | sudo parted /dev/mmcblk0 print && \
+sudo parted /dev/mmcblk0 resizepart 3 100% && \
+sudo partprobe /dev/mmcblk0 && \
+sudo e2fsck -f /dev/mmcblk0p3 && \
+sudo resize2fs /dev/mmcblk0p3 && \
+sudo parted /dev/mmcblk0 unit s print && \
 sudo tune2fs -l /dev/mmcblk0p3 | grep -i "block count"
 ```
 
